@@ -1,6 +1,4 @@
-import 'dart:math';
-
-import 'package:dummy_text_app/name_provider.dart';
+import 'package:dummy_text_app/providers/field_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -15,7 +13,9 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
-      providers: [ChangeNotifierProvider(create: (_) => NameProvider())],
+      providers: [
+        ChangeNotifierProvider(create: (_) => FieldProvider()),
+      ],
       child: MaterialApp(
         title: 'Flutter Demo',
         theme: ThemeData(
@@ -37,110 +37,63 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   @override
-  void dispose() {
-    super.dispose();
-
-    if (mounted) {
-      Provider.of<NameProvider>(context, listen: false).disposeControllers();
-    }
-  }
-
-  @override
   void initState() {
     super.initState();
 
-    Provider.of<NameProvider>(context, listen: false).initTextField();
+    Provider.of<FieldProvider>(context, listen: false).generateInitialFields();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Nothing"),
+        title: const Text("My App"),
       ),
-      body: Consumer<NameProvider>(builder: (context, model, _) {
-        return Form(
-          key: model.formKey,
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: SingleChildScrollView(
-              child: Column(
-                children: [
-                  ///Add names of your children
+      body: Consumer<FieldProvider>(builder: (context, model, _) {
+        return Padding(
+          padding: const EdgeInsets.all(10.0),
+          child: Form(
+            key: model.formKey,
+            child: Column(
+              children: [
+                ...List.generate(model.textList.length, (index) {
+                  final controller = model.textList[index];
+                  return TextFormField(
+                    controller: controller,
+                    validator: (value) {
+                      if (value!.isEmpty) {
+                        return 'Field is required';
+                      }
+                      return null;
+                    },
+                    decoration: InputDecoration(
+                        hintText: "Child's Name ${index + 1}",
+                        suffixIcon: index == 0
+                            ? null
+                            : GestureDetector(
+                                onTap: () {
+                                  model.removeTextField = index;
+                                },
+                                child: const Icon(Icons.delete))),
+                  );
+                }),
 
-                  ///TextFormWidget
-                  ...List.generate(model.textList.length, (index) {
-                    final controller = model.textList[index];
-                    return Container(
-                      margin: const EdgeInsets.only(bottom: 10),
-                      child: TextFormField(
-                        controller: controller,
-                        validator: (value) {
-                          if (value!.isEmpty) {
-                            return "Field is required";
-                          }
-                          return null;
-                        },
-                        decoration: InputDecoration(
-                          hintText: "Name ${index + 1}",
-                          suffixIcon: index == 0
-                              ? null
-                              : GestureDetector(
-                                  onTap: () {
-                                    model.removeTextField = index;
-                                  },
-                                  child: const Icon(Icons.delete),
-                                ),
-                        ),
-                      ),
-                    );
-                  }),
-
-                  Align(
+                ///Add more button
+                Align(
                     alignment: Alignment.topRight,
-                    child: Card(
-                      color: Colors.amber,
-                      child: GestureDetector(
-                        onTap: () {
+                    child: TextButton(
+                        onPressed: () {
                           model.addTextField = TextEditingController();
                         },
-                        child: Container(
-                          padding: const EdgeInsets.only(top: 10, left: 5, right: 5),
-                          width: MediaQuery.sizeOf(context).width / 4,
-                          alignment: Alignment.center,
-                          margin: const EdgeInsets.only(bottom: 10),
-                          child: const Text(
-                            "Add more",
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
+                        child: const Text("Add More"))),
 
-                  ///Button
-                  const SizedBox(
-                    height: 40,
-                  ),
-
-                  GestureDetector(
-                    onTap: () {
-                      model.submitForm();
+                ///Validate fields
+                TextButton(
+                    onPressed: () {
+                      model.submitForms();
                     },
-                    child: Container(
-                      alignment: Alignment.center,
-                      color: Colors.amber,
-                      padding: const EdgeInsets.all(10),
-                      child: const Text("Submit"),
-                    ),
-                  )
-                ],
-              ),
+                    child: const Text("Save"))
+              ],
             ),
           ),
         );
